@@ -2,6 +2,7 @@ import kagglehub
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
+import tensorflow as tf
 
 
 # Download do dataset
@@ -14,6 +15,7 @@ TRAIN_DIR = os.path.join(PATH, "train")
 TEST_DIR = os.path.join(PATH, "test")
 
 # PRÉ-PROCESSAMENTO
+
 # Função para contar imagens em cada subpasta
 def get_counts(base_path):
     counts = {}
@@ -50,7 +52,7 @@ plt.show()
 
 # Impressão dos valores no console
 print("-" * 30)
-print("RELATÓRIO DE QUANTIDADES")
+print("RELATORIO DE QUANTIDADES")
 print("-" * 30)
 for emotion in train_counts.keys():
     t_val = train_counts.get(emotion, 0)
@@ -87,4 +89,49 @@ for emotion in categorias:
 
 plt.tight_layout()
 plt.show()
+
+# Usando TensorFlow/Keras para garantir que as imagens tenham o tamanho e formato corretos para o modelo, também para separar os dados de treino, validação e teste de forma eficiente.
+#Irá devolver um conjunto de dados que produz lotes de de 32 imagens dos subdiretórios , juntamente com os rótulos 0 e 10 para cada imagem, dependendo do subdiretório em que se encontram.
+
+val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    directory=TRAIN_DIR,
+    image_size=(48, 48),
+    batch_size=32, # usamos o 32 por padrão, recomendando na documentação
+    color_mode="grayscale",
+    label_mode="categorical",
+    labels="inferred",
+    validation_split=0.2,
+    subset="validation",
+    seed=50
+)
+
+# categorias encontradas
+print("Classes encontradas:", val_ds.class_names)
+
+# Pegar um lote de 32 imagens
+for imagens, labels in val_ds.take(1):
+    print("Formato do lote de imagens:", imagens.shape)  
+    
+    # Ver a primeira etiqueta do lote 
+    print("Exemplo de etiqueta:", labels[0].numpy())
+
+train_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    directory=TRAIN_DIR,
+    image_size=(48, 48),
+    batch_size=32,
+    color_mode="grayscale",
+    label_mode="categorical",
+    labels="inferred",
+    validation_split=0.2,
+    subset="training",
+    seed=50
+)
+
+test_ds = tf.keras.preprocessing.image_dataset_from_directory(
+    directory=TEST_DIR, 
+    image_size=(48, 48),
+    batch_size=32,
+    color_mode="grayscale",
+    label_mode="categorical"
+)
 
