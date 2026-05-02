@@ -1,9 +1,13 @@
 import kagglehub
 import os
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
-
+from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from keras.models import Sequential
+from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, Activation, Rescaling
+from keras.optimizers import Adam
 
 # Download do dataset
 
@@ -120,7 +124,7 @@ train_ds = tf.keras.preprocessing.image_dataset_from_directory(
     image_size=(48, 48),
     batch_size=32,
     color_mode="grayscale",
-    label_mode="categorical",
+    label_mode="categorical", # "categorical" para classificação multiclasse, onde cada rótulo é representado como um vetor one-hot.
     labels="inferred",
     validation_split=0.2,
     subset="training",
@@ -135,3 +139,138 @@ test_ds = tf.keras.preprocessing.image_dataset_from_directory(
     label_mode="categorical"
 )
 
+# MODELO DE REDE NEURAL CONVOLUCIONAL (CNN) PARA CLASSIFICAÇÃO DE EMOÇÕES
+def emotion_model(input_shape=(48, 48, 1), num_classes=7):
+    model = Sequential()
+
+    model.add(Rescaling(1./255, input_shape=input_shape)) # Normaliza os valores dos pixels para o intervalo [0,1]
+
+    model.add(Conv2D(input_shape=input_shape, filters=64, kernel_size=(3, 3), padding='same'))
+    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding='same'))
+    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(filters=256, kernel_size=(3, 3), padding='same'))
+    model.add(Conv2D(filters=256, kernel_size=(3, 3), padding='same'))
+    model.add(Conv2D(filters=256, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
+    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
+    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
+    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
+    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    model.add(Flatten()),
+        
+    model.add(Dense(256)),
+    model.add(BatchNormalization()),
+    model.add(Activation('relu')),
+    model.add(Dropout(0.5)),
+
+    model.add(Dense(512)),
+    model.add(BatchNormalization()),
+    model.add(Activation('relu')),
+    model.add(Dropout(0.5)),
+
+    # Camada de Saída
+    # Usamos softmax porque label_mode="categorical" (one-hot encoding)
+    model.add(Dense(num_classes, activation='softmax'))
+    
+    return model
+
+# Instanciar o modelo
+model = emotion_model()
+
+# Compilar
+model.compile(
+    optimizer= Adam(learning_rate=0.001), # learning_rate=0.001, # taxa de aprendizado padrão para Adam
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+model.summary()
+
+EPOCHS = 30
+BATCH = 32
+
+# Para o treino se não houver melhora em 10 épocas
+early_stopping = EarlyStopping(
+    monitor='val_loss', # val_accuracy ou val_loss, dependendo do que você quer monitorar
+    patience=10, 
+    restore_best_weights=True
+)
+
+# Diminui o Learning Rate se o modelo travar num valor de perda
+reduce_lr = ReduceLROnPlateau(
+    monitor='val_loss', 
+    factor=0.2, 
+    patience=5, 
+    min_lr=0.00001
+)
+
+
+ # Defina um número alto, o EarlyStopping cuidará de parar antes se necessário
+
+history = model.fit(
+    train_ds,
+    batch_size=BATCH,
+    validation_data=val_ds,
+    epochs=EPOCHS,
+    shuffle=True,
+    verbose=1,
+    callbacks=[early_stopping, reduce_lr]
+)
+accuracy = history.history['accuracy']
+val_accuracy = history.history['val_accuracy']
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs = range(len(accuracy) )
+# Gráfico de Acurácia
+plt.plot(history.history['accuracy'], label='Treino')
+plt.plot(history.history['val_accuracy'], label='Validação')
+plt.title('Acurácia do Modelo')
+plt.legend()
+plt.show()
+
+plt.plot(epochs, accuracy, 'r', label='Treino')
+plt.plot(epochs, val_accuracy, 'b', label='Validação')
+plt.title('Acurácia do Modelo')
+plt.xlabel('Épocas')
+plt.ylabel('Acurácia')
+plt.legend(loc='lower right')
+plt.show()
+
+
+plt.plot(epochs, loss, 'r', label='Treino')
+plt.plot(epochs, val_loss, 'b', label='Validação')
+plt.title('Perda do Modelo')
+plt.xlabel('Épocas')
+plt.ylabel('Perda')
+plt.legend(loc='lower right')
+plt.show()
+
+model.save('modelo_emocoes.h5')
