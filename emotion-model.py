@@ -1,5 +1,3 @@
-from xml.parsers.expat import model
-
 import kagglehub
 import os
 import numpy as np
@@ -142,71 +140,44 @@ test_ds = tf.keras.preprocessing.image_dataset_from_directory(
 # MODELO DE REDE NEURAL CONVOLUCIONAL (CNN) PARA CLASSIFICAÇÃO DE EMOÇÕES
 def emotion_model(input_shape=(48, 48, 1), num_classes=7):
     model = tf.keras.models.Sequential([
-
+        tf.keras.layers.Input(shape=input_shape),
         # Normaliza os valores dos pixels para o intervalo [0,1]
         tf.keras.layers.Rescaling(1./255, input_shape=input_shape),
 
-        tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same'),
+        # Layers 01
+        tf.keras.layers.Conv2D(64, (3, 3), padding='same'),
+        tf.keras.layers.Conv2D(64, (3, 3), padding='same'),
         tf.keras.layers.BatchNormalization(), # Estandariza as ativações da camada anterior, o que pode acelerar o treinamento e melhorar a estabilidade do modelo.
         tf.keras.layers.Activation('relu'), # utiliza o valor máximo entre 0 e a entrada, introduzindo não linearidade no modelo, curvas de separação mais complexas.
         tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
         tf.keras.layers.Dropout(rate=0.25), # remove da rede 25% dos neurônios para evitar overfitting, de forma aleatória, a cada EPOCHS de treino. Efeta o metodo fit().
 
-        tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same'),
+        # Layers 02
+        tf.keras.layers.Conv2D(128, (3, 3), padding='same'),
+        tf.keras.layers.Conv2D(128, (3, 3), padding='same'),
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.Activation('relu'),
         tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
         tf.keras.layers.Dropout(rate=0.25),
 
-        tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same'),
+        # Layers 03
+        tf.keras.layers.Conv2D(256, (3, 3), padding='same'),
+        tf.keras.layers.Conv2D(256, (3, 3), padding='same'),
+        tf.keras.layers.Conv2D(256, (3, 3), padding='same'),
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.Activation('relu'),
         tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
         tf.keras.layers.Dropout(rate=0.25),
 
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        # Layers 04
+        tf.keras.layers.Conv2D(512, (3, 3), padding='same'),
+        tf.keras.layers.Conv2D(512, (3, 3), padding='same'),
+        tf.keras.layers.Conv2D(512, (3, 3), padding='same'),
         tf.keras.layers.BatchNormalization(),
         tf.keras.layers.Activation('relu'),
         tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
         tf.keras.layers.Dropout(rate=0.25),
 
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Activation('relu'),
-        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
-        tf.keras.layers.Dropout(rate=0.25),
-
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Activation('relu'),
-        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
-        tf.keras.layers.Dropout(rate=0.25),
-
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Activation('relu'),
-        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
-        tf.keras.layers.Dropout(rate=0.25),
-
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
-        tf.keras.layers.BatchNormalization(),
-        tf.keras.layers.Activation('relu'),
-        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
-        tf.keras.layers.Dropout(rate=0.25),
 
         tf.keras.layers.Flatten(),
             
@@ -223,7 +194,7 @@ def emotion_model(input_shape=(48, 48, 1), num_classes=7):
         # Camada de Saída/ output layer
         # Usamos softmax porque label_mode="categorical" (one-hot encoding)
         tf.keras.layers.Dense(units= num_classes, activation='softmax'),
-    ]),
+    ])
 
     return model
 
@@ -232,12 +203,13 @@ model = emotion_model()
 
 # Compilar
 model.compile(
-    optimizer= Adam(learning_rate=0.001), # learning_rate=0.001, # taxa de aprendizado padrão para Adam, parametro.
+    optimizer= 'Adam', # learning_rate=0.001, # taxa de aprendizado padrão para Adam, parametro.
     loss='categorical_crossentropy',
     metrics=['accuracy']
 )
 
 model.summary()
+model.save('modelo_emocoes.h5')
 
 EPOCHS = 30
 BATCH = 32
@@ -275,6 +247,8 @@ loss = history.history['loss']
 val_loss = history.history['val_loss']
 
 epochs = range(len(accuracy) )
+
+
 # Gráfico de Acurácia
 plt.plot(history.history['accuracy'], label='Treino')
 plt.plot(history.history['val_accuracy'], label='Validação')
@@ -285,7 +259,7 @@ plt.show()
 plt.plot(epochs, accuracy, 'r', label='Treino')
 plt.plot(epochs, val_accuracy, 'b', label='Validação')
 plt.title('Acurácia do Modelo')
-plt.xlabel('Épocas')
+plt.xlabel('epochs')
 plt.ylabel('Acurácia')
 plt.legend(loc='lower right')
 plt.show()
@@ -294,9 +268,59 @@ plt.show()
 plt.plot(epochs, loss, 'r', label='Treino')
 plt.plot(epochs, val_loss, 'b', label='Validação')
 plt.title('Perda do Modelo')
-plt.xlabel('Épocas')
+plt.xlabel('epochs')
 plt.ylabel('Perda')
 plt.legend(loc='lower right')
 plt.show()
 
-model.save('modelo_emocoes.h5')
+
+
+class_names = train_ds.class_names
+# 1. Pegar um lote de imagens e etiquetas do dataset de teste
+for images_batch, labels_batch in test_ds.take(1):
+    # Fazer as predições para esse lote
+    predictions = model.predict(images_batch)
+    
+    # Converter as etiquetas de volta para arrays numpy se necessário
+    images_batch = images_batch.numpy()
+    labels_batch = labels_batch.numpy()
+    
+    # Como as imagens estão em escala de cinza (48, 48, 1), 
+    # precisamos remover a última dimensão para o plt.imshow exibir corretamente
+    images_display = images_batch.squeeze()
+    
+    break # Só precisamos de um lote para a visualização
+def display_predictions(images, y_true, y_pred, class_names, num_samples=5):
+    plt.figure(figsize=(10, 6))
+
+    num_samples = min(num_samples, len(images))
+
+    for i in range(num_samples):
+        plt.subplot(1, num_samples, i + 1)
+        plt.xticks([])
+        plt.yticks([])
+        plt.grid(False)
+        plt.imshow(images[i], cmap='gray')
+
+        true_label_idx = np.argmax(y_true[i])
+        true_label = class_names[true_label_idx]
+
+        pred_label_idx = np.argmax(y_pred[i])
+        predicted_label = class_names[pred_label_idx]
+
+        color = 'green' if true_label_idx == pred_label_idx else 'red'
+
+        plt.xlabel(f'True: {true_label}\nPred: {predicted_label}')
+    plt.tight_layout()
+    plt.show()
+# display_predictions
+
+display_predictions(
+   images_display, 
+    labels_batch, 
+    predictions, 
+    class_names, 
+    num_samples=6
+)
+
+
