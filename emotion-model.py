@@ -1,3 +1,5 @@
+from xml.parsers.expat import model
+
 import kagglehub
 import os
 import numpy as np
@@ -5,8 +7,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import tensorflow as tf
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, Activation, Rescaling
 from keras.optimizers import Adam
 
 # Download do dataset
@@ -141,64 +141,90 @@ test_ds = tf.keras.preprocessing.image_dataset_from_directory(
 
 # MODELO DE REDE NEURAL CONVOLUCIONAL (CNN) PARA CLASSIFICAÇÃO DE EMOÇÕES
 def emotion_model(input_shape=(48, 48, 1), num_classes=7):
-    model = Sequential()
+    model = tf.keras.models.Sequential([
 
-    model.add(Rescaling(1./255, input_shape=input_shape)) # Normaliza os valores dos pixels para o intervalo [0,1]
+        # Normaliza os valores dos pixels para o intervalo [0,1]
+        tf.keras.layers.Rescaling(1./255, input_shape=input_shape),
 
-    model.add(Conv2D(input_shape=input_shape, filters=64, kernel_size=(3, 3), padding='same'))
-    model.add(Conv2D(filters=64, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+        tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=64, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.BatchNormalization(), # Estandariza as ativações da camada anterior, o que pode acelerar o treinamento e melhorar a estabilidade do modelo.
+        tf.keras.layers.Activation('relu'), # utiliza o valor máximo entre 0 e a entrada, introduzindo não linearidade no modelo, curvas de separação mais complexas.
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        tf.keras.layers.Dropout(rate=0.25), # remove da rede 25% dos neurônios para evitar overfitting, de forma aleatória, a cada EPOCHS de treino. Efeta o metodo fit().
 
-    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding='same'))
-    model.add(Conv2D(filters=128, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+        tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=128, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        tf.keras.layers.Dropout(rate=0.25),
 
-    model.add(Conv2D(filters=256, kernel_size=(3, 3), padding='same'))
-    model.add(Conv2D(filters=256, kernel_size=(3, 3), padding='same'))
-    model.add(Conv2D(filters=256, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+        tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=256, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        tf.keras.layers.Dropout(rate=0.25),
 
-    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
-    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
-    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        tf.keras.layers.Dropout(rate=0.25),
 
-    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
-    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
-    model.add(Conv2D(filters=512, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        tf.keras.layers.Dropout(rate=0.25),
 
-    model.add(Flatten()),
-        
-    model.add(Dense(256)),
-    model.add(BatchNormalization()),
-    model.add(Activation('relu')),
-    model.add(Dropout(0.5)),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        tf.keras.layers.Dropout(rate=0.25),
 
-    model.add(Dense(512)),
-    model.add(BatchNormalization()),
-    model.add(Activation('relu')),
-    model.add(Dropout(0.5)),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        tf.keras.layers.Dropout(rate=0.25),
 
-    # Camada de Saída
-    # Usamos softmax porque label_mode="categorical" (one-hot encoding)
-    model.add(Dense(num_classes, activation='softmax'))
-    
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.Conv2D(filters=512, kernel_size=(3, 3), padding='same'),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.MaxPooling2D(pool_size=(2, 2)),
+        tf.keras.layers.Dropout(rate=0.25),
+
+        tf.keras.layers.Flatten(),
+            
+        tf.keras.layers.Dense(256),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.Dropout(rate=0.5),
+
+        tf.keras.layers.Dense(512),
+        tf.keras.layers.BatchNormalization(),
+        tf.keras.layers.Activation('relu'),
+        tf.keras.layers.Dropout(rate=0.5),
+
+        # Camada de Saída/ output layer
+        # Usamos softmax porque label_mode="categorical" (one-hot encoding)
+        tf.keras.layers.Dense(units= num_classes, activation='softmax'),
+    ]),
+
     return model
 
 # Instanciar o modelo
@@ -206,7 +232,7 @@ model = emotion_model()
 
 # Compilar
 model.compile(
-    optimizer= Adam(learning_rate=0.001), # learning_rate=0.001, # taxa de aprendizado padrão para Adam
+    optimizer= Adam(learning_rate=0.001), # learning_rate=0.001, # taxa de aprendizado padrão para Adam, parametro.
     loss='categorical_crossentropy',
     metrics=['accuracy']
 )
