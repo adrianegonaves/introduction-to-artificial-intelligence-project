@@ -324,3 +324,45 @@ display_predictions(
 )
 
 
+import numpy as np
+from sklearn.metrics import confusion_matrix, classification_report
+
+# 1. Pegar as imagens e labels reais do test_ds
+y_true = []
+y_pred = []
+
+for x, y in test_ds:
+    predictions = model.predict(x)
+    y_true.extend(np.argmax(y, axis=1))
+    y_pred.extend(np.argmax(predictions, axis=1))
+
+# 2. Gerar o relatório
+print(classification_report(y_true, y_pred, target_names=categorias))
+
+
+#----
+# Pega apenas 1 lote (batch) do dataset
+for imagens, labels in train_ds.take(1):
+    # Converte para numpy para facilitar a visualização
+    img_exemplo = imagens[0].numpy()
+    
+    print("--- VALORES ANTES DA NORMALIZAÇÃO ---")
+    print(f"Tipo do dado: {img_exemplo.dtype}")
+    print(f"Valor Máximo: {img_exemplo.max()}")
+    print(f"Valor Mínimo: {img_exemplo.min()}")
+    # Imprime uma pequena parte da matriz de pixels (ex: 5x5)
+    print("Amostra de pixels:")
+    print(img_exemplo[0:5, 0:5, 0])
+
+    # Criar uma camada de escala isolada
+scaler = tf.keras.layers.Rescaling(1./255)
+
+# Passar a mesma imagem pela camada
+img_normalizada = scaler(imagens[0])
+
+print("\n--- VALORES DEPOIS DA NORMALIZAÇÃO ---")
+print(f"Tipo do dado: {img_normalizada.dtype}")
+print(f"Valor Máximo: {img_normalizada.numpy().max()}")
+print(f"Valor Mínimo: {img_normalizada.numpy().min()}")
+print("Amostra de pixels (agora entre 0 e 1):")
+print(img_normalizada.numpy()[0:5, 0:5, 0])
