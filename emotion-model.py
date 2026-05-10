@@ -166,7 +166,7 @@ train_ds, val_ds, test_ds, class_names = load_data()
 
 for imagens, labels in train_ds.take(1):
 # Converte para numpy para facilitar a visualização
-img_exemplo = imagens[0].numpy()
+    img_exemplo = imagens[0].numpy()
 
 print("--- VALORES ANTES DA NORMALIZAÇÃO ---")
 print(f"Tipo do dado: {img_exemplo.dtype}")
