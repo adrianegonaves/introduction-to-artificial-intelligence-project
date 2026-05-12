@@ -9,8 +9,11 @@ from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from keras.optimizers import Adam
 
 # PATH E VARIÁVEIS GLOBAIS DE CONFIGURAÇÃO
-EPOCHS = 30
-BATCH = 32
+#EPOCHS = 30
+#EPOCHS = 20
+EPOCHS = 10
+#BATCH = 32
+BATCH = 64 #deixei 64 para acelerar o processo de treino, mas dependendo do hardware disponível, pode ser necessário ajustar para 32 ou outro valor.
 IMAGE_SIZE = (48, 48)
 SEED = 50
 
@@ -125,6 +128,9 @@ def load_data():
     # visualização do contéudo com o obetivo de entender melhor a estrutura dos dados e garantir que estão sendo carregados corretamente para o modelo.
 
     # categorias encontradas
+    print("-" * 30)
+    print("VALIDAÇÃO DO CONTEÚDO DO DATASET")
+    print("-" * 30)
     print("Classes encontradas:", val_ds.class_names)
     # Pegar um lote de 32 imagens
     for imagens, labels in val_ds.take(1):
@@ -197,28 +203,28 @@ def build_emotion_model(input_shape=(48, 48, 1), num_classes=7):
         layers.Rescaling(1./255), # Normaliza os valores dos pixels para o intervalo [0,1]
 
         # Layers 01
-        layers.Conv2D(64, (3, 3), padding='same'),
+        layers.Conv2D(32, (3, 3), padding='same'),
         layers.BatchNormalization(), # Estandariza as ativações da camada anterior, o que pode acelerar o treinamento e melhorar a estabilidade do modelo.
         layers.Activation('relu'), # utiliza o valor máximo entre 0 e a entrada, introduzindo não linearidade no modelo, curvas de separação mais complexas.
         layers.MaxPooling2D(pool_size=(2, 2)),
         layers.Dropout(rate=0.25), # remove da rede 25% dos neurônios para evitar overfitting, de forma aleatória, a cada EPOCHS de treino. Efeta o metodo fit().
 
         # Layers 02
-        layers.Conv2D(128, (3, 3), padding='same'),
+        layers.Conv2D(64, (3, 3), padding='same'),
         layers.BatchNormalization(),
         layers.Activation('relu'),
         layers.MaxPooling2D(pool_size=(2, 2)),
         layers.Dropout(rate=0.25),
 
         # Layers 03
-        layers.Conv2D(256, (3, 3), padding='same'),
+        layers.Conv2D(128, (3, 3), padding='same'),
         layers.BatchNormalization(),
         layers.Activation('relu'),
         layers.MaxPooling2D(pool_size=(2, 2)),
-       layers.Dropout(rate=0.25),
+        layers.Dropout(rate=0.25),
 
         # Layers 04
-        layers.Conv2D(512, (3, 3), padding='same'),
+        layers.Conv2D(256, (3, 3), padding='same'),
         layers.BatchNormalization(),
         layers.Activation('relu'),
         layers.MaxPooling2D(pool_size=(2, 2)),
@@ -232,19 +238,15 @@ def build_emotion_model(input_shape=(48, 48, 1), num_classes=7):
         layers.Activation('relu'),
         layers.Dropout(rate=0.5),
 
-        layers.Dense(512),
-        layers.BatchNormalization(),
-        layers.Activation('relu'),
-        layers.Dropout(rate=0.5),
 
         # Camada de Saída/ output layer
         # Usamos softmax porque label_mode="categorical" (one-hot encoding)
-        layers.Dense(units= num_classes, activation='softmax'),
+        layers.Dense(units= num_classes, activation='softmax', dtype='float32'),
     ])
 
     # Compilar
     model.compile(
-        optimizer= 'Adam', # learning_rate=0.001, # taxa de aprendizado padrão para Adam, parametro.
+        optimizer=Adam(learning_rate=0.0001), # learning_rate=0.001, # taxa de aprendizado padrão para Adam, parametro.
         loss='categorical_crossentropy',
         metrics=['accuracy']
     )
@@ -259,7 +261,7 @@ model.save('modelo_emocoes.h5')
 # Para o treino se não houver melhora em 10 épocas
 early_stopping = EarlyStopping(
     monitor='val_loss', # val_accuracy ou val_loss, dependendo do que você quer monitorar
-    patience=8, 
+    patience=10, 
     restore_best_weights=True
 )
 
@@ -301,7 +303,7 @@ def plot_training_history(history):
     plt.plot(epochs_range, acc, label='Treino', color='#2ecc71', linewidth=2)
     plt.plot(epochs_range, val_acc, label='Validação', color='#e74c3c', linewidth=2)
     plt.title('Acurácia do Modelo', fontsize=14)
-    plt.xlabel('Épocas')
+    plt.xlabel('Epochs')
     plt.ylabel('Acurácia')
     plt.legend(loc='lower right')
     plt.grid(True, alpha=0.3)
@@ -311,7 +313,7 @@ def plot_training_history(history):
     plt.plot(epochs_range, loss, label='Treino', color='#2ecc71', linewidth=2)
     plt.plot(epochs_range, val_loss, label='Validação', color='#e74c3c', linewidth=2)
     plt.title('Perda (Loss) do Modelo', fontsize=14)
-    plt.xlabel('Épocas')
+    plt.xlabel('Epochs')
     plt.ylabel('Erro')
     plt.legend(loc='upper right')
     plt.grid(True, alpha=0.3)
