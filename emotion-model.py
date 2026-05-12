@@ -277,7 +277,7 @@ reduce_lr = ReduceLROnPlateau(
     min_lr=0.00001
 )
 model_checkpoint = ModelCheckpoint(
-    'best_emotion_model.keras',
+    'emotion_model.keras',
      save_best_only=True
 )
 
