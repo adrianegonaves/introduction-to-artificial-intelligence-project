@@ -9,9 +9,9 @@ from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from keras.optimizers import Adam
 
 # PATH E VARIÁVEIS GLOBAIS DE CONFIGURAÇÃO
-#EPOCHS = 30
+EPOCHS = 30
 #EPOCHS = 20
-EPOCHS = 10
+#EPOCHS = 10
 #BATCH = 32
 BATCH = 64 #deixei 64 para acelerar o processo de treino, mas dependendo do hardware disponível, pode ser necessário ajustar para 32 ou outro valor.
 IMAGE_SIZE = (48, 48)
@@ -108,36 +108,9 @@ plot_emotion_samples(TRAIN_DIR, n_examples=4)
 # CARRAGAMENTO E PREPARAÇÃO DOS DADOS PARA O MODELO
 
 # Usando TensorFlow/Keras para garantir que as imagens tenham o tamanho e formato corretos para o modelo, também para separar os dados de treino, validação e teste de forma eficiente.
-#Irá devolver um conjunto de dados que produz lotes de 32 imagens dos subdiretórios , juntamente com os rótulos 0 e 10 para cada imagem, dependendo do subdiretório em que se encontram.
+#Irá devolver um conjunto de dados que produz lotes de 32 ( ou o tamanho definido ) imagens dos subdiretórios , juntamente com os rótulos 0 e 1 para cada imagem, dependendo do subdiretório em que se encontram.
 
 def load_data():
-    #validação do dataset
-    val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        directory=TRAIN_DIR,
-        image_size=IMAGE_SIZE,
-        batch_size= BATCH, # usamos o 32 por padrão, recomendando na documentação
-        color_mode="grayscale",
-        label_mode="categorical",
-        labels="inferred",
-        validation_split=0.2,
-        subset="validation",
-        seed=SEED
-    )
-
-#################################################################################################################
-    # visualização do contéudo com o obetivo de entender melhor a estrutura dos dados e garantir que estão sendo carregados corretamente para o modelo.
-
-    # categorias encontradas
-    print("-" * 30)
-    print("VALIDAÇÃO DO CONTEÚDO DO DATASET")
-    print("-" * 30)
-    print("Classes encontradas:", val_ds.class_names)
-    # Pegar um lote de 32 imagens
-    for imagens, labels in val_ds.take(1):
-        print("Formato do lote de imagens:", imagens.shape)  
-        # Ver a primeira etiqueta do lote 
-        print("Exemplo de etiqueta:", labels[0].numpy())
- #################################################################################################################
     #Treino
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
         directory=TRAIN_DIR,
@@ -148,6 +121,33 @@ def load_data():
         labels="inferred",
         validation_split=0.2,
         subset="training",
+        seed=SEED
+    )
+    
+    #################################################################################################################
+    # visualização do contéudo com o obetivo de entender melhor a estrutura dos dados e garantir que estão sendo carregados corretamente para o modelo.
+
+    # categorias encontradas
+    print("-" * 30)
+    print("VALIDAÇÃO DO CONTEÚDO DO DATASET")
+    print("-" * 30)
+    print("Classes encontradas:", train_ds.class_names)
+    # Pegar um lote de 32 imagens
+    for imagens, labels in train_ds.take(1):
+        print("Formato do lote de imagens:", imagens.shape)  
+        # Ver a primeira etiqueta do lote 
+        print("Exemplo de etiqueta:", labels[0].numpy())
+ #################################################################################################################
+   #validação do dataset
+    val_ds = tf.keras.preprocessing.image_dataset_from_directory(
+        directory=TRAIN_DIR,
+        image_size=IMAGE_SIZE,
+        batch_size= BATCH, 
+        color_mode="grayscale",
+        label_mode="categorical",
+        labels="inferred",
+        validation_split=0.2,
+        subset="validation",
         seed=SEED
     )
 
@@ -168,7 +168,11 @@ def load_data():
             train_ds.class_names)
 
 train_ds, val_ds, test_ds, class_names = load_data()
+
 # INSPEÇÃO DOS DADOS E NORMALIZAÇÃO
+print("-" * 30)
+print("INSPEÇÃO DOS DADOS E NORMALIZAÇÃO")
+print("-" * 30)
 
 for imagens, labels in train_ds.take(1):
 # Converte para numpy para facilitar a visualização
