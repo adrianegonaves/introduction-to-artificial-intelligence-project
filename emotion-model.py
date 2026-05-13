@@ -259,7 +259,6 @@ def build_emotion_model(input_shape=(48, 48, 1), num_classes=7):
 # Instanciar o modelo
 model = build_emotion_model(num_classes=len(class_names))
 model.summary()
-model.save('modelo_emocoes.h5')
 
 
 # Para o treino se não houver melhora em 10 épocas
