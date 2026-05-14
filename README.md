@@ -17,21 +17,21 @@ A fase inicial do projeto focou-se no pré-processamento e na compreensão dos d
 
 
 ## 4. Como rodar o projeto:
-### 1. Configurar o ambiente virtual:
+### 4.1. Configurar o ambiente virtual:
 
 ````
 source .venv/bin/activate  # Linux/macOS
 .venv\Scripts\activate     # Windows
 ````
-#### 2. Instalar dependências
+#### 4.2. Instalar dependências
 ````
 pip install -r requirements.txt
 ````
-#### 3. Treinar o modelo
+#### 4.3. Treinar o modelo
 ````
 python emotion-model.py
 ````
-#### 4. Executar a aplicação Streamlit
+#### 4.4. Executar a aplicação Streamlit
 ````
 streamlit run app.py
 ````
