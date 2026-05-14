@@ -16,10 +16,28 @@ A fase inicial do projeto focou-se no pré-processamento e na compreensão dos d
 * Verificar a distribuição quantitativa das imagens em cada categoria de emoção.
 
 
-## 4. Ferramentas e Referências
-Para o desenvolvimento e depuração do código, utilizámos a IA generativa **Gemini** como suporte na exploração de ideias e resolução de erros lógicos.
+## 4. Como rodar o projeto:
+### 1. Configurar o ambiente virtual:
 
-### Fontes de Consulta:
+````
+source .venv/bin/activate  # Linux/macOS
+.venv\Scripts\activate     # Windows
+````
+#### 2. Instalar dependências
+````
+pip install -r requirements.txt
+````
+#### 3. Treinar o modelo
+````
+python emotion-model.py
+````
+#### 4. Executar a aplicação Streamlit
+````
+streamlit run app.py
+````
+
+
+### 5. Fontes de Consulta:
 * **Artigos Técnicos:**
     * [Loading Image Data in Keras: image_dataset_from_directory vs flow_from_dataframe](https://medium.com/@drubodevpramanik/loading-image-data-in-keras-image-dataset-from-directory-vs-flow-from-dataframe-a11890d82e55)
     * [Maximizando a potência do seu modelo de Deep Learning](https://www.linkedin.com/pulse/maximizando-pot%C3%AAncia-do-seu-modelo-de-deep-learning-com-fl%C3%A1via-gaia-/)
@@ -33,6 +51,7 @@ Para o desenvolvimento e depuração do código, utilizámos a IA generativa **G
     * [O que são redes neurais convolucionais?](https://www.ibm.com/br-pt/think/topics/convolutional-neural-networks?regionCode=br&languageCode=pt&contactmodule=true&cm-history=br-pt)
     * [Convolutional Neural Network (CNN) in Deep Learning](https://www.geeksforgeeks.org/deep-learning/convolutional-neural-network-cnn-in-machine-learning/)
     * [Como avaliar seu modelo de classificação](https://medium.com/data-hackers/como-avaliar-seu-modelo-de-classificação-34e6f6011108)
+    * [Keras](https://keras.io/*)
 
 * **Vídeo Aulas:**
     * [Tutorial de Redes Neuronais (YouTube)](https://www.youtube.com/watch?v=bp8OpasGtV4)

@@ -7,9 +7,10 @@ import tensorflow as tf
 from tensorflow.keras import layers, models, callbacks
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from keras.optimizers import Adam
+from sklearn.metrics import confusion_matrix, classification_report
 
 # PATH E VARIÁVEIS GLOBAIS DE CONFIGURAÇÃO
-EPOCHS = 30
+EPOCHS = 40
 #EPOCHS = 20
 #EPOCHS = 10
 #BATCH = 32
@@ -24,24 +25,27 @@ print("Path to dataset files:", PATH)
 TRAIN_DIR = os.path.join(PATH, "train")
 TEST_DIR = os.path.join(PATH, "test")
 
+######################################################
 # VISUALIZAÇÃO DE DADOS 
+######################################################
 
-def plot_dataset_distribution(train_dir, test_dir):
-
-    def get_counts(base_path):
-        counts = {}
-        if not os.path.exists(base_path):
-            return counts
-        for emotion in os.listdir(base_path):
-            emotion_path = os.path.join(base_path, emotion)
-            if os.path.isdir(emotion_path):
-                counts[emotion] = len(os.listdir(emotion_path))
+#função auxilar para contar o número de imagens em cada categoria de emoção, tanto para o dataset de treino quanto para o de teste. Ele percorre os subdiretórios dentro do caminho base fornecido e conta quantos arquivos (imagens) existem em cada um, retornando um dicionário com as contagens.
+def get_counts(base_path):
+    counts = {}
+    if not os.path.exists(base_path):
+        return counts
+    for emotion in os.listdir(base_path):
+        emotion_path = os.path.join(base_path, emotion)
+        if os.path.isdir(emotion_path):
+            counts[emotion] = len(os.listdir(emotion_path))
         # Retorna ordenado por valor para o gráfico ficar simétrico
-        return dict(sorted(counts.items(), key=lambda item: item[1], reverse=True))
+    return dict(sorted(counts.items(), key=lambda item: item[1], reverse=True))
 
+# função para plotar a distribuição das imagens por categoria para os datasets de treino e teste, usando gráficos de barras para facilitar a comparação visual entre os dois conjuntos de dados. Ele também imprime um relatório detalhado com o número de imagens em cada categoria para ambos os datasets.
+def plot_dataset_distribution(train_dir, test_dir):
     # Obter dados de ambos os diretórios
-    train_counts = get_counts(TRAIN_DIR)
-    test_counts = get_counts(TEST_DIR)
+    train_counts = get_counts(train_dir)
+    test_counts = get_counts(test_dir)
 
     #  Criar visualização comparativa com graficos de barras o plt
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
@@ -61,7 +65,7 @@ def plot_dataset_distribution(train_dir, test_dir):
     plt.tight_layout()
     plt.show()
 
-    # Impressão dos números de imagens por categoria para ambos os datasets
+    #Impressão dos números de imagens por categoria para ambos os datasets
     print("-" * 30)
     print("RELATORIO DE QUANTIDADES")
     print("-" * 30)
@@ -72,8 +76,7 @@ def plot_dataset_distribution(train_dir, test_dir):
 
     return train_counts
 
-# para visualizar a distribuição das imagens por categoria em ambos os datasets
-# Para obervar as imagens, vamos pegar 4 exemplos de cada categoria do dataset de treino. 
+#Função para imprimir uma grelha de imagens, onde cada linha representa uma categoria de emoção e cada coluna mostra um exemplo diferente dessa categoria. Ele percorre os subdiretórios do diretório fornecido, seleciona um número específico (4) de imagens de cada categoria e as exibe usando Matplotlib, com rótulos indicando a emoção correspondente.
 def plot_emotion_samples(directory, n_examples=4):
     categories = sorted(os.listdir(directory))
     n_categories = len(categories)
@@ -105,29 +108,27 @@ def plot_emotion_samples(directory, n_examples=4):
 counts = plot_dataset_distribution(TRAIN_DIR, TEST_DIR)
 plot_emotion_samples(TRAIN_DIR, n_examples=4)
 
+######################################################
 # CARRAGAMENTO E PREPARAÇÃO DOS DADOS PARA O MODELO
-
+######################################################
 # Usando TensorFlow/Keras para garantir que as imagens tenham o tamanho e formato corretos para o modelo, também para separar os dados de treino, validação e teste de forma eficiente.
-#Irá devolver um conjunto de dados que produz lotes de 32 ( ou o tamanho definido ) imagens dos subdiretórios , juntamente com os rótulos 0 e 1 para cada imagem, dependendo do subdiretório em que se encontram.
-
+#Irá devolver um conjunto de dados que produz lotes de 32 ( ou o tamanho definido ) imagens dos subdiretórios, juntamente com os rótulos 0 e 1 para cada imagem, dependendo do subdiretório em que se encontram. O parâmetro "validation_split=0.2" indica que 20% dos dados serão reservados para validação, e "subset='training'" ou "subset='validation'" especifica se o conjunto de dados retornado deve conter os dados de treinamento ou de validação, respectivamente.
 def load_data():
     #Treino
     train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-        directory=TRAIN_DIR,
-        image_size=IMAGE_SIZE,
-        batch_size=BATCH,
-        color_mode="grayscale",
+        directory=TRAIN_DIR, # diretório base onde estão as subpastas de cada categoria de emoção.
+        image_size=IMAGE_SIZE, #redimensiona as imagens para o tamanho especificado (48x48 pixels) para garantir que todas as imagens tenham a mesma dimensão.
+        batch_size=BATCH, # define o número de imagens que serão processadas em cada lote durante o treinamento do modelo.
+        color_mode="grayscale", # garante que as imagens sejam carregadas em escala de cinza
         label_mode="categorical", # "categorical" para classificação multiclasse, onde cada rótulo é representado como um vetor one-hot.
-        labels="inferred",
-        validation_split=0.2,
-        subset="training",
-        seed=SEED
+        labels="inferred", # os rótulos são inferidos a partir dos nomes das subpastas, ou seja, cada subpasta é considerada uma classe diferente.
+        validation_split=0.2, # garate que 20% dos dados sejam reservados para validação
+        subset="training", # especifica que este conjunto de dados deve conter os dados de treinamento ou validação(80%)
+        seed=SEED # para garantir que a divisão entre treino e validação seja consistente.
     )
     
     #################################################################################################################
-    # visualização do contéudo com o obetivo de entender melhor a estrutura dos dados e garantir que estão sendo carregados corretamente para o modelo.
-
-    # categorias encontradas
+    # visualização do contéudo com o obetivo de entender melhor a estrutura dos dados e garantir que estão sendo carregados corretamente para o modelo.Essa parte do codigo é apenas para estudo e não tem impacto no modelo.
     print("-" * 30)
     print("VALIDAÇÃO DO CONTEÚDO DO DATASET")
     print("-" * 30)
@@ -137,7 +138,8 @@ def load_data():
         print("Formato do lote de imagens:", imagens.shape)  
         # Ver a primeira etiqueta do lote 
         print("Exemplo de etiqueta:", labels[0].numpy())
- #################################################################################################################
+    #################################################################################################################
+ 
    #validação do dataset
     val_ds = tf.keras.preprocessing.image_dataset_from_directory(
         directory=TRAIN_DIR,
@@ -169,6 +171,9 @@ def load_data():
 
 train_ds, val_ds, test_ds, class_names = load_data()
 
+#################################################################################################################
+#Mais um etapa do codigo criada apenas com o objetivo de estudar e entender o funcionamento. Queriamos entender melhor o conceito de normalização e como os valores dos pixels são transformados antes de serem alimentados no modelo, pois a normalizalão é uma etapa importante. Portando essa parte não tenho impacto no modelo.
+
 # INSPEÇÃO DOS DADOS E NORMALIZAÇÃO
 print("-" * 30)
 print("INSPEÇÃO DOS DADOS E NORMALIZAÇÃO")
@@ -176,110 +181,110 @@ print("-" * 30)
 
 for imagens, labels in train_ds.take(1):
 # Converte para numpy para facilitar a visualização
-    img_exemplo = imagens[0].numpy()
+    example_image = imagens[0].numpy()
 
 print("--- VALORES ANTES DA NORMALIZAÇÃO ---")
-print(f"Tipo do dado: {img_exemplo.dtype}")
-print(f"Valor Máximo: {img_exemplo.max()}")
-print(f"Valor Mínimo: {img_exemplo.min()}")
-# Imprime uma pequena parte da matriz de pixels (ex: 5x5)
+print(f"Tipo do dado: {example_image.dtype}")
+print(f"Valor Máximo: {example_image.max()}")
+print(f"Valor Mínimo: {example_image.min()}")
+# Imprime uma pequena parte da matriz de pixels
 print("Amostra de pixels:")
-print(img_exemplo[0:5, 0:5, 0])
+print(example_image[0:5, 0:5, 0])
 
-# Criar uma camada de escala isolada
+# Criar uma camada de escala isolada e normaliza. 
 scaler = tf.keras.layers.Rescaling(1./255)
 # Passar a mesma imagem pela camada
-img_normalizada = scaler(imagens[0])
+image_normalizada = scaler(imagens[0])
 
 print("\n--- VALORES DEPOIS DA NORMALIZAÇÃO ---")
-print(f"Tipo do dado: {img_normalizada.dtype}")
-print(f"Valor Máximo: {img_normalizada.numpy().max()}")
-print(f"Valor Mínimo: {img_normalizada.numpy().min()}")
+print(f"Tipo do dado: {image_normalizada.dtype}")
+print(f"Valor Máximo: {image_normalizada.numpy().max()}")
+print(f"Valor Mínimo: {image_normalizada.numpy().min()}")
 print("Amostra de pixels (agora entre 0 e 1):")
-print(img_normalizada.numpy()[0:5, 0:5, 0])
+print(image_normalizada.numpy()[0:5, 0:5, 0])
 
+#################################################################################################################
 
-# MODELO DE REDE NEURAL CONVOLUCIONAL (CNN) PARA CLASSIFICAÇÃO DE EMOÇÕES
-
-def build_emotion_model(input_shape=(48, 48, 1), num_classes=7):
+# Função para criar o modelo de rede neural convolucional (CNN) para classificação de emoções, recebe como argumento o numero de classes e o input_shape (que é o formato das imagens de entrada, neste caso, 48x48 pixels em escala de cinza) e retorna um modelo compilado.
+def build_emotion_model(input_shape=(48, 48, 1), number_classes= 7):
     model = models.Sequential([
-        layers.Input(shape=input_shape),
+        # Camada de entrada e normalização
+        layers.Input(shape=input_shape),# Define a forma dos dados de entrada para o modelo, neste caso, imagens de 48x48 pixels em escala de cinza (1 canal).
         layers.Rescaling(1./255), # Normaliza os valores dos pixels para o intervalo [0,1]
 
-        # Layers 01
-        layers.Conv2D(32, (3, 3), padding='same'),
+        # Bloco 01
+        layers.Conv2D(32, (3, 3), padding='same'), # camada convolucional que aplica 32 filtros de tamanho 3x3 às imagens de entrada, com preenchimento 'same' par manter o tamanho da imagem igual à entrada, evitando que as bordas sejam ignoradas.
         layers.BatchNormalization(), # Estandariza as ativações da camada anterior, o que pode acelerar o treinamento e melhorar a estabilidade do modelo.
-        layers.Activation('relu'), # utiliza o valor máximo entre 0 e a entrada, introduzindo não linearidade no modelo, curvas de separação mais complexas.
-        layers.MaxPooling2D(pool_size=(2, 2)),
-        layers.Dropout(rate=0.25), # remove da rede 25% dos neurônios para evitar overfitting, de forma aleatória, a cada EPOCHS de treino. Efeta o metodo fit().
+        layers.Activation('relu'), # introduz não linearidade no modelo, curvas de separação mais complexas.
+        layers.MaxPooling2D(pool_size=(2, 2)), # adiciona uma camada de pooling que reduzirá a imagem pela metade de sua altura e largura originais.
+        layers.Dropout(rate=0.2), # remove da rede 20% dos neurônios para evitar overfitting, de forma aleatória, a cada EPOCHS de treino. Efeta o metodo fit().
 
-        # Layers 02
+        # Bloco 02
         layers.Conv2D(64, (3, 3), padding='same'),
         layers.BatchNormalization(),
         layers.Activation('relu'),
         layers.MaxPooling2D(pool_size=(2, 2)),
-        layers.Dropout(rate=0.25),
+        layers.Dropout(rate=0.2),
 
-        # Layers 03
+        # Bloco 03
         layers.Conv2D(128, (3, 3), padding='same'),
         layers.BatchNormalization(),
         layers.Activation('relu'),
         layers.MaxPooling2D(pool_size=(2, 2)),
-        layers.Dropout(rate=0.25),
+        layers.Dropout(rate=0.2),
 
-        # Layers 04
-        layers.Conv2D(256, (3, 3), padding='same'),
-        layers.BatchNormalization(),
-        layers.Activation('relu'),
-        layers.MaxPooling2D(pool_size=(2, 2)),
-        layers.Dropout(rate=0.25),
-
-
-        layers.Flatten(),
+     
+        layers.Flatten(), # transforma as saídas 2D das camadas convolucionais anteriores em um vetor 1D, que pode ser alimentado em camadas densas totalmente conectadas.
             
-        layers.Dense(256),
+        layers.Dense(256), # camada densa totalmente conectada com 256 neurônios, que processa as características extraídas pelas camadas convolucionais anteriores.
         layers.BatchNormalization(),
         layers.Activation('relu'),
-        layers.Dropout(rate=0.5),
-
+        layers.Dropout(rate=0.2),
+        
+        layers.Dense(128),
+        layers.BatchNormalization(),
+        layers.Activation('relu'),
+        layers.Dropout(rate=0.2),
 
         # Camada de Saída/ output layer
-        # Usamos softmax porque label_mode="categorical" (one-hot encoding)
-        layers.Dense(units= num_classes, activation='softmax', dtype='float32'),
+        # Usamos softmax porque label_mode="categorical" (one-hot encoding), que  ter o formato binario para cada classe, e softmax é a função de ativação apropriada para problemas de classificação multiclasse, pois converte as saídas do modelo em probabilidades que somam 1, facilitando a interpretação dos resultados.
+        layers.Dense(number_classes, activation='softmax'),
     ])
 
     # Compilar
     model.compile(
-        optimizer=Adam(learning_rate=0.0001), # learning_rate=0.001, # taxa de aprendizado padrão para Adam, parametro.
+        optimizer=Adam(learning_rate=0.001), # learning_rate=0.001
         loss='categorical_crossentropy',
         metrics=['accuracy']
     )
     return model
 
-# Instanciar o modelo
-model = build_emotion_model(num_classes=len(class_names))
+# Instanciar o modelo com o número de classes igual ao número de categorias de emoções presentes no dataset, que é determinado pela variável class_names.
+model = build_emotion_model(number_classes=len(class_names))
+#comando summary() mostra algumas informações sobre as camadas do modelo. Podemos ver as dimensões de cada camada e os parâmetros aprendidos em cada etapa.
 model.summary()
 
-
-# Para o treino se não houver melhora em 10 épocas
+##Callbacks para o treinamento do modelo:
+# À medida que o modelo aprende, a perda nos dados de treinamento tende a diminuir, mas a perda nos dados de validação pode começar a aumentar se o modelo começar o overfitting dos dados de treinamento. O EarlyStopping monitora a perda de validação e, se ela não melhorar por um número especificado de epochs (neste caso, 15).
 early_stopping = EarlyStopping(
-    monitor='val_loss', # val_accuracy ou val_loss, dependendo do que você quer monitorar
-    patience=10, 
-    restore_best_weights=True
+    monitor='val_loss', # monitora a perda de validação para determinar quando parar o treinamento.
+    patience=15,
+    restore_best_weights=True # garante que, quando o treinamento for interrompido, os pesos do modelo sejam restaurados para os valores correspondentes à melhor perda de validação observada durante o treinamento.
 )
-
-# Diminui o Learning Rate se o modelo travar num valor de perda
+# Durante o treinamento, se a perda de validação não melhorar por um número especificado de epochs (neste caso 5), a taxa de aprendizado será reduzida. 
 reduce_lr = ReduceLROnPlateau(
     monitor='val_loss', 
-    factor=0.2, 
-    patience=4, 
-    min_lr=0.00001
+    factor=0.5, #Fator pelo qual a taxa de aprendizado será reduzida
+    patience=5, #Se a perda de validação não melhorar por 5 epochs, a taxa de aprendizado será reduzida.
+    min_lr=0.00001 # define um limite inferior para a taxa de aprendizado, garantindo que ela não seja reduzida a um valor tão baixo que o modelo pare de aprender.
 )
+
+#Função de retorno de chamada para salvar o modelo Keras 
 model_checkpoint = ModelCheckpoint(
     'emotion_model.keras',
      save_best_only=True
 )
-
+# Para treinar o modelo, usando os conjuntos de dados de treino e validação, e aplicando os callbacks definidos para monitorar o desempenho do modelo durante o treinamento. O resultado do treinamento é armazenado na variável "history", que contém informações sobre a perda e a acurácia do modelo em cada epoch, tanto para os dados de treinamento quanto para os dados de validação.
 history = model.fit(
     train_ds,
     validation_data=val_ds,
@@ -287,8 +292,10 @@ history = model.fit(
     callbacks=[early_stopping, reduce_lr, model_checkpoint]
 )
 
+#########################################################
 # VISUALIZAÇÃO DE RESULTADOS 
-
+#########################################################
+# Função para plotar os gráficos de Acurácia e Perda (Loss) do modelo durante o treinamento
 def plot_training_history(history):
     """
     Gera gráficos de Acurácia e Perda lado a lado.
@@ -324,37 +331,7 @@ def plot_training_history(history):
     plt.tight_layout()
     plt.show()
 
-def plot_confusion_matrix(model, test_ds, class_names):
-    y_true = []
-    y_pred = []
-
-    for x, y in test_ds:
-        predictions = model.predict(x, verbose=0)
-        y_true.extend(np.argmax(y, axis=1))
-        y_pred.extend(np.argmax(predictions, axis=1))
-
-    cm = confusion_matrix(y_true, y_pred)
-    
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
-    plt.title('Matriz de Confusão')
-    plt.xlabel('Predicted')
-    plt.ylabel('True')
-    plt.show()
-
-    # Relatório de Métricas (Precision, Recall, F1-Score)
-    print("\n" + "="*60)
-    print("RELATÓRIO DE CLASSIFICAÇÃO")
-    print("="*60)
-    print(classification_report(y_true, y_pred, target_names=class_names))
-
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.metrics import confusion_matrix, classification_report
-
-
-
+#Função para gerar a matriz de confusão e o relatório de classificação, que inclui métricas como precisão, recall e F1-score para cada categoria de emoção. 
 def plot_confusion_matrix_and_report(model, test_ds, class_names):
    
     y_true = []
@@ -379,10 +356,11 @@ def plot_confusion_matrix_and_report(model, test_ds, class_names):
 
     # Relatório de Métricas (Precision, Recall, F1-Score)
     print("\n" + "="*60)
-    print("RELATÓRIO DE CLASSIFICAÇÃO")
+    print("RELATORIO DE CLASSIFICACAO")
     print("="*60)
     print(classification_report(y_true, y_pred, target_names=class_names))
-
+    
+# Função para exibir algumas amostras de imagens do dataset de teste, juntamente com suas etiquetas verdadeiras e as predições/previsão do modelo. As predições corretas são destacadas em verde, enquanto as incorretas são destacadas em vermelho, facilitando a visualização do desempenho do modelo em casos específicos.
 def display_test_predictions(model, test_ds, class_names, num_samples=6):
    
     for images, labels in test_ds.take(1):
